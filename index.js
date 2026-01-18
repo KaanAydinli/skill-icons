@@ -1,3 +1,4 @@
+const http = require('http');
 const icons = require('./dist/icons.json');
 const iconNameList = [...new Set(Object.keys(icons).map(i => i.split('-')[0]))];
 const shortNames = {
@@ -136,14 +137,45 @@ async function handleRequest(request) {
       },
     });
   } else {
-    return fetch(request);
+    return new Response('Not Found', { status: 404 });
   }
 }
 
-addEventListener('fetch', event => {
-  event.respondWith(
-    handleRequest(event.request).catch(
-      err => new Response(err.stack, { status: 500 })
-    )
-  );
+// Node.js HTTP server wrapper
+const PORT = process.env.PORT || 3000;
+
+const server = http.createServer(async (req, res) => {
+  try {
+    const host = req.headers.host || 'localhost';
+    const protocol = 'http';
+    const url = `${protocol}://${host}${req.url}`;
+    
+    const request = { url };
+    const response = await handleRequest(request);
+    
+    res.statusCode = response.status || 200;
+    if (response.headers) {
+      for (const [key, value] of Object.entries(response.headers)) {
+        res.setHeader(key, value);
+      }
+    }
+    res.end(response.body);
+  } catch (err) {
+    res.statusCode = 500;
+    res.end(err.stack);
+  }
+});
+
+// Simple Response class for Node.js compatibility
+class Response {
+  constructor(body, options = {}) {
+    this.body = body;
+    this.status = options.status || 200;
+    this.headers = options.headers || {};
+  }
+}
+
+server.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}/`);
+  console.log(`Try: http://localhost:${PORT}/icons?i=js,ts,python`);
 });

@@ -4,7 +4,8 @@
 	"main": "index.js",
 	"license": "MIT",
 	"scripts": {
-		"dev": "node build.js && miniflare --watch",
+		"start": "node index.js",
+		"dev": "node build.js && node index.js",
 		"build": "node build.js",
 		"deploy": "node build.js && wrangler publish"
 	},
